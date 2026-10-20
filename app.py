@@ -301,6 +301,3 @@ if uploaded_ibge is not None and uploaded_excel is not None:
         f"Ocorreu um erro durante o processamento dos arquivos. Verifique se"
         f" os formatos estão corretos. Detalhe: {e}"
     )
-
-#Instalando o Streamlit
-!pip install streamlit
