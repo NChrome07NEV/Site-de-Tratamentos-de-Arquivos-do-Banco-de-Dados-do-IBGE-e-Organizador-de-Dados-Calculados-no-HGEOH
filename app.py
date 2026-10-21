@@ -5,14 +5,14 @@ import streamlit as st
 
 # Configuração da página do aplicativo
 st.set_page_config(
-    page_title="Processador de Estações Gravimétricas - IBGE (RJ)",
+    page_title="Organizador e Formator de Arquivos Brutos das Estações Gravimétricas Gerados no Site do Banco de Dados do IBGE ",
     layout="wide",
 )
 
 # ==========================================
 # CONTROLE DE ACESSO / SEGURANÇA
 # ==========================================
-st.title("Acesso Restrito - Processador e Organizador de Dados Gravimétricos do IBGE (RJ)")
+st.title("Acesso Restrito - Organizador e Formatador de Arquivos Brutos das Estações Gravimétricas Gerados no Site do Banco de Dados do IBGE (RJ)")
 
 SENHA_DO_PROJETO = "SIRAB_HGEO2026"
 
@@ -32,8 +32,8 @@ st.success("Acesso autorizado com sucesso! Seja bem-vindo ao sistema.")
 # ESTRUTURA DO APLICATIVO EM 2 ETAPAS (ABAS)
 # ==========================================
 aba1, aba2 = st.tabs([
-    "📍 Etapa 1: Formatação de Coordenadas & Gerar TXT para o hgeoHNOR2020",
-    "📊 Etapa 2: Cruzamento pós-hgeoHNOR2020 & Relatórios Regionais (9 Arquivos)"
+    "Etapa 1: Formatação de Coordenadas & Gerar TXT para o hgeoHNOR2020",
+    "Etapa 2: Cruzamento pós-hgeoHNOR2020 & Relatórios Regionais (9 Arquivos)"
 ])
 
 # Função auxiliar para formatar coordenadas
@@ -131,7 +131,7 @@ mapa_regioes = {
 # ABA 1: TRATAMENTO INICIAL (GERAR TXT E EXCEL ORGANIZADO)
 # ==========================================
 with aba1:
-    st.subheader("1️⃣ Upload do arquivo CSV bruto baixado do Banco de Dados do IBGE")
+    st.subheader("1️° - Upload do arquivo CSV bruto baixado do Banco de Dados do IBGE")
     uploaded_bruto = st.file_uploader(
         "Selecione o arquivo CSV bruto do IBGE:", type=["csv"], key="bruto"
     )
@@ -144,7 +144,7 @@ with aba1:
                 uploaded_bruto.seek(0)
                 df_bruto = pd.read_csv(uploaded_bruto, sep=None, engine="python", encoding="latin1")
 
-            st.info(f"Arquivo bruto lido com sucesso! Total de estações: **{len(df_bruto)}**")
+            st.info(f"Arquivo bruto lido com sucesso; Total de estações: **{len(df_bruto)}**")
 
             # Identificação de colunas
             col_id = [c for c in df_bruto.columns if "id" in c.lower() or "ponto" in c.lower() or "estacao" in c.lower()][0]
@@ -165,11 +165,11 @@ with aba1:
                 alt = str(row[col_alt]).strip().replace(",", ".")
                 txt_buffer.write(f"{ponto} {lat} {lon} {alt}\n")
 
-            st.markdown("### 📥 Downloads da Etapa 1:")
+            st.markdown("### Downloads da Etapa 1:")
             
             # Botão TXT
             st.download_button(
-                label="📄 Baixar Arquivo .TXT formatado (Entrada para o hgeoHNOR2020)",
+                label="Baixar Arquivo .TXT formatado (Entrada para o hgeoHNOR2020)",
                 data=txt_buffer.getvalue(),
                 file_name="Estacoes_Entrada_HGEOHNOR2020.txt",
                 mime="text/plain",
@@ -178,7 +178,7 @@ with aba1:
             # Botão Excel Organizado
             excel_bruto_bytes = converter_para_excel_bytes(df_bruto)
             st.download_button(
-                label="📊 Baixar Planilha Excel (.XLSX) Bruta Formatada e Organizada",
+                label="Baixar Planilha Excel (.XLSX) Bruta Formatada e Organizada",
                 data=excel_bruto_bytes,
                 file_name="00_IBGE_Estacoes_Tratadas_Organizadas.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -191,7 +191,7 @@ with aba1:
 # ABA 2: CRUZAMENTO PÓS-CALCULO & RELATÓRIOS REGIONAIS
 # ==========================================
 with aba2:
-    st.subheader("2️⃣ Cruzamento de Dados e Geração dos 9 Relatórios Regionais")
+    st.subheader("2️° - Cruzamento de Dados e Geração dos 9 Relatórios Regionais")
     
     col1, col2 = st.columns(2)
     with col1:
@@ -213,7 +213,7 @@ with aba2:
                 uploaded_hgeo_out.seek(0)
                 df_hgeo = pd.read_csv(uploaded_hgeo_out, sep=None, engine="python", encoding="latin1")
 
-            st.info("Arquivos carregados com sucesso! Iniciando cruzamento e regionalização...")
+            st.info("Arquivos carregados com sucesso: Iniciando cruzamento e regionalização...")
 
             col_id_excel = [c for c in df_excel_org.columns if "estacao" in c.lower() or "id" in c.lower() or "ponto" in c.lower()][0]
             col_id_hgeo = [c for c in df_hgeo.columns if "id" in c.lower() or "ponto" in c.lower() or "estacao" in c.lower()][0]
@@ -251,12 +251,12 @@ with aba2:
             else:
                 df_completo["REGIAO_OFICIAL"] = "Não Identificada"
 
-            st.subheader("📊 Lobby de Downloads dos Relatórios Finais")
+            st.subheader("Lobby de Downloads dos Relatórios Finais")
 
             # 1. Download Relatório Geral
             geral_bytes = converter_para_excel_bytes(df_completo)
             st.download_button(
-                label="📊 Baixar Relatório Geral do Estado do Rio de Janeiro (Ordenado)",
+                label="Baixar Relatório Geral do Estado do Rio de Janeiro (Ordenado)",
                 data=geral_bytes,
                 file_name="01_Relatorio_Geral_Estado_Rio_Ordenado.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
