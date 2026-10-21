@@ -3,10 +3,35 @@ import pandas as pd
 import io
 import openpyxl
 from openpyxl.styles import Font, Alignment
+#Sexto Teste: após algumas edições, adições e correções do programa, a ideia permanece a mesma de gerar os arquivos gerados para uma melhor organização dos dados
+#gerados pelo banco de dados do IBGE e pelo arquivo gerado na conversão de altitudes hgeohnor2020. Dessa vez foi necessário fazer o import de mais uma biblioteca
+#openpyxl para a organização e formatação dos arquivos gerados nas duas etapas do programa.
 
 # Configuração da página Streamlit
 st.set_page_config(page_title="Processador de Dados IBGE", layout="wide")
 
+# ==========================================
+# CONTROLE DE ACESSO POR SENHA
+# ==========================================
+st.title("Acesso Restrito - Organizador de Dados das Estações Gravimétricas do Banco de Dados do IBGE (RJ)")
+
+SENHA_DO_PROJETO = "SIRAB_HGEO2026"
+
+senha_digitada = st.text_input(
+    "Digite a senha de acesso para liberar a ferramenta:", type="password"
+)
+
+if senha_digitada != SENHA_DO_PROJETO:
+    if senha_digitada != "":
+        st.error("Senha incorreta, tente novamente.")
+    st.warning("Por favor, insira a senha fornecida pelo responsável pelo projeto para acessar o sistema.")
+    st.stop()
+
+st.success("Acesso autorizado com sucesso! Seja bem-vindo ao sistema.")
+
+# ==========================================
+# FUNÇÕES AUXILIARES
+# ==========================================
 def aplicar_formatacao_excel(buffer_excel):
     """
     Aplica formatação Times New Roman, tamanho 12, centralização de texto
@@ -52,6 +77,9 @@ def formatar_coordenada(valor):
     else:
         return s
 
+# ==========================================
+# INTERFACE PRINCIPAL
+# ==========================================
 st.title("Processador e Organizador de Dados do IBGE")
 
 aba1, aba2 = st.tabs(["Etapa 1: Formatação do CSV IBGE", "Etapa 2: Cruzamento e Agrupamento Regional"])
