@@ -13,7 +13,7 @@ from openpyxl.styles import Font, Alignment
 #o que quiser gerar e reorganizado algumas linhas de código para que o programe baixe um por vez ao invés de gerar todos de uma vez só. Além disso, também foi corrigido
 #o problema de duplicidade nas colunas da segunda etapa.
 #Agora foi implementado mais algumas interações visuais de carregamento / upload dos arquivos e corrigido alguns erros de posicionamento das colunas gerados pelos arquivos
-#da segunda etapa novamente. -
+#da segunda etapa novamente..
 
 # Configuração da página Streamlit
 st.set_page_config(page_title="Organizador e Formatador de Arquivos Brutos das Estações Gravimétricas do Rio de Janeiro - BD - IBGE", layout="wide")
