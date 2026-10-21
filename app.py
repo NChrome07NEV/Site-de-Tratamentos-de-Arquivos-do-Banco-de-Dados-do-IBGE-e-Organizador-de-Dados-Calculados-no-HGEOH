@@ -129,7 +129,7 @@ def formatar_coordenada(valor):
 # ==========================================
 # INTERFACE PRINCIPAL
 # ==========================================
-st.title("Processador e Organizador de Dados do IBGE")
+st.title("Processador e Organizador dos Arquivos Brutos Gerados no Site do Banco de Dados - IBGE")
 
 aba1, aba2 = st.tabs(["Etapa 1: Formatação do CSV IBGE", "Etapa 2: Cruzamento e Agrupamento Regional"])
 
