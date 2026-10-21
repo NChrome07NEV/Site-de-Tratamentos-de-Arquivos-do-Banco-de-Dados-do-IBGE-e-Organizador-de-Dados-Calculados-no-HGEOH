@@ -3,7 +3,7 @@ import pandas as pd
 import io
 import openpyxl
 from openpyxl.styles import Font, Alignment
-#Décimo Teste: após algumas edições, adições e correções do programa, a ideia permanece a mesma de gerar os arquivos gerados para uma melhor organização dos dados
+#Décimo Primeiro Teste: após algumas edições, adições e correções do programa, a ideia permanece a mesma de gerar os arquivos gerados para uma melhor organização dos dados
 #gerados pelo banco de dados do IBGE e pelo arquivo gerado na conversão de altitudes hgeohnor2020. Dessa vez foi necessário fazer o import de mais uma biblioteca
 #openpyxl para a organização e formatação dos arquivos gerados nas duas etapas do programa e alinhamento / centralização dos aspectos visuais do site. Além disso, 
 #agora o programa vai reorganizar novamente os arquivos por data, porém para cada tipo de medicao presente dos arquivos. Antes era gerado apenas o tipo de 
@@ -196,18 +196,17 @@ with aba2:
         try:
             with st.spinner("Realizando o cruzamento inteligente e mapeamento regional..."):
                 try:
-                    df_ibge = pd.read_csv(file_ibge_csv, sep=None, engine='python', encoding='utf-8', header=None)
+                    df_ibge = pd.read_csv(file_ibge_csv, sep=None, engine='python', encoding='utf-8')
                 except Exception:
                     file_ibge_csv.seek(0)
-                    df_ibge = pd.read_csv(file_ibge_csv, sep=None, engine='python', encoding='latin1', header=None)
-                
-                # Se o arquivo do HGEOHNOR não tiver cabeçalho padrão, atribuímos nomes às colunas principais (ID, Lat, Lon e resultados)
-                if len(df_ibge.columns) >= 3:
-                    df_ibge.columns = ['ESTACAO_HGEO', 'LAT_HGEO', 'LON_HGEO'] + [f'RES_{i}' for i in range(4, len(df_ibge.columns) + 1)]
+                    df_ibge = pd.read_csv(file_ibge_csv, sep=None, engine='python', encoding='latin1')
                 
                 df_excel = pd.read_excel(file_excel_ref, sheet_name=0)
                 
-                col_id_ibge = 'ESTACAO_HGEO' if 'ESTACAO_HGEO' in df_ibge.columns else df_ibge.columns[0]
+                # Identifica dinamicamente a coluna de ID no arquivo do HGEOHNOR (ex: id_ponto, estacao, etc.)
+                col_id_ibge_candidates = [c for c in df_ibge.columns if 'id' in c.lower() or 'ponto' in c.lower() or 'estacao' in c.lower()]
+                col_id_ibge = col_id_ibge_candidates[0] if col_id_ibge_candidates else df_ibge.columns[0]
+                
                 col_id_excel = 'ESTACAO' if 'ESTACAO' in df_excel.columns else df_excel.columns[0]
                 
                 df_ibge[col_id_ibge] = df_ibge[col_id_ibge].astype(str).str.strip()
