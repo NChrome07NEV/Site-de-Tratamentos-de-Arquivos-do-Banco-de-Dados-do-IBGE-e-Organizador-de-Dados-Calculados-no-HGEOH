@@ -134,7 +134,7 @@ mapa_regioes = {
 # ABA 1: TRATAMENTO INICIAL (GERAR TXT E EXCEL ORGANIZADO)
 # ==========================================
 with aba1:
-    st.subheader("1️⃣ Upload do arquivo CSV bruto baixado do Banco de Dados do IBGE")
+    st.subheader("1️° - Upload do arquivo CSV bruto baixado do Banco de Dados do IBGE")
     uploaded_bruto = st.file_uploader(
         "Selecione o arquivo CSV bruto do IBGE:", type=["csv"], key="bruto"
     )
@@ -172,7 +172,7 @@ with aba1:
             
             # Botão TXT
             st.download_button(
-                label="📄 Baixar Arquivo .TXT formatado (Entrada para o hgeoHNOR2020)",
+                label="1° => Baixar Arquivo .TXT formatado (Entrada para o hgeoHNOR2020)",
                 data=txt_buffer.getvalue(),
                 file_name="Estacoes_Entrada_HGEOHNOR2020.txt",
                 mime="text/plain",
@@ -181,7 +181,7 @@ with aba1:
             # Botão Excel Organizado
             excel_bruto_bytes = converter_para_excel_bytes(df_bruto)
             st.download_button(
-                label="📊 Baixar Planilha Excel (.XLSX) Bruta Formatada e Organizada",
+                label="2° => Baixar Planilha Excel (.XLSX) Bruta Formatada e Organizada",
                 data=excel_bruto_bytes,
                 file_name="00_IBGE_Estacoes_Tratadas_Organizadas.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -194,7 +194,7 @@ with aba1:
 # ABA 2: CRUZAMENTO PÓS-CALCULO & RELATÓRIOS REGIONAIS
 # ==========================================
 with aba2:
-    st.subheader("2️⃣ Cruzamento de Dados e Geração dos 9 Relatórios Regionais")
+    st.subheader("2️° - Cruzamento de Dados e Geração dos 9 Relatórios Regionais")
     
     col1, col2 = st.columns(2)
     with col1:
@@ -254,12 +254,12 @@ with aba2:
             else:
                 df_completo["REGIAO_OFICIAL"] = "Não Identificada"
 
-            st.subheader("📊 Lobby de Downloads dos Relatórios Finais")
+            st.subheader("Lobby de Downloads dos Relatórios Finais")
 
             # 1. Download Relatório Geral
             geral_bytes = converter_para_excel_bytes(df_completo)
             st.download_button(
-                label="📊 Baixar Relatório Geral do Estado do Rio de Janeiro (Ordenado)",
+                label="### Baixar Relatório Geral do Estado do Rio de Janeiro (Ordenado)",
                 data=geral_bytes,
                 file_name="01_Relatorio_Geral_Estado_Rio_Ordenado.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
