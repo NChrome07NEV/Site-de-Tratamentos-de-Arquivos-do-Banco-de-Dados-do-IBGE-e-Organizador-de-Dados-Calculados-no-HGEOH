@@ -3,14 +3,29 @@ import pandas as pd
 import io
 import openpyxl
 from openpyxl.styles import Font, Alignment
-#Sétimo Teste: após algumas edições, adições e correções do programa, a ideia permanece a mesma de gerar os arquivos gerados para uma melhor organização dos dados
+#Oitavo Teste: após algumas edições, adições e correções do programa, a ideia permanece a mesma de gerar os arquivos gerados para uma melhor organização dos dados
 #gerados pelo banco de dados do IBGE e pelo arquivo gerado na conversão de altitudes hgeohnor2020. Dessa vez foi necessário fazer o import de mais uma biblioteca
-#openpyxl para a organização e formatação dos arquivos gerados nas duas etapas do programa. Além disso, agora o programa vai reorganizar novamente os arquivos por data,
-#porém para cada tipo de medicao presente dos arquivos. Antes era gerado apenas o tipo de medicaoplan para cada arquivo, mas talvez seja interessante olhar para cada
-#dado de forma individual para outros processos futuros para os outros cálculos por PVC ou definição do numero geopotencial.
+#openpyxl para a organização e formatação dos arquivos gerados nas duas etapas do programa e alinhamento / centralização dos aspectos visuais do site. Além disso, 
+#agora o programa vai reorganizar novamente os arquivos por data, porém para cada tipo de medicao presente dos arquivos. Antes era gerado apenas o tipo de 
+#medicaoplan para cada arquivo, mas talvez seja interessante olhar para cada dado de forma individual para outros processos futuros para os outros cálculos por PVC
+#ou definição do numero geopotencial.
 
 # Configuração da página Streamlit
 st.set_page_config(page_title="Organizador e Formator de Arquivos Brutos das Estações Gravimétricas Gerados no Site do Banco de Dados do IBGE ", layout="wide")
+
+# ==========================================
+# ESTILO CSS PARA CENTRALIZAR TÍTULOS E TEXTOS
+# ==========================================
+st.markdown("""
+    <style>
+    h1, h2, h3, p, .stMarkdown {
+        text-align: center;
+    }
+    .stTextInput, .stFileUploader, .stTabs, .stButton {
+        text-align: left;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
 # ==========================================
 # CONTROLE DE ACESSO POR SENHA
@@ -36,14 +51,15 @@ st.success("Acesso autorizado com sucesso! Seja bem-vindo ao sistema.")
 # ==========================================
 def criar_excel_multidatas(df_base):
     """
-    Cria um buffer Excel contendo 7 abas:
+    Cria um buffer Excel contendo 8 abas:
     1. Geral (sem ordenação)
     2. Medicaoplan (ordenado pela data mais recente)
-    3. Medicaoalt (ordenado pela data mais recente)
-    4. Calculoalt (ordenado pela data mais recente)
-    5. Medicaogra (ordenado pela data mais recente)
-    6. Calculogra (ordenado pela data mais recente)
-    7. Visita (ordenado pela data mais recente)
+    3. Datcalcplan (ordenado pela data mais recente)
+    4. Medicaoalt (ordenado pela data mais recente)
+    5. Calculoalt (ordenado pela data mais recente)
+    6. Medicaogra (ordenado pela data mais recente)
+    7. Calculogra (ordenado pela data mais recente)
+    8. Visita (ordenado pela data mais recente)
     Aplicando a formatação openpyxl em todas as abas.
     """
     buffer_out = io.BytesIO()
@@ -51,9 +67,10 @@ def criar_excel_multidatas(df_base):
         # 1. Aba Geral
         df_base.to_excel(writer, sheet_name='Geral', index=False)
         
-        # Mapeamento de tópicos e colunas candidatas correspondentes
+        # Mapeamento de tópicos e colunas candidatas correspondentes (8 planilhas no total)
         topicos = {
             'Medicaoplan': ['MEDICAOPLAN', 'MEDICAO_PLAN', 'DATA_MEDICAO_PLAN'],
+            'Datcalcplan': ['DATCALCPLAN', 'DAT_CALC_PLAN', 'DATA_CALC_PLAN'],
             'Medicaoalt': ['MEDICAOALT', 'MEDICAO_ALT', 'DATA_MEDICAO_ALT'],
             'Calculoalt': ['CALCULOALT', 'CALCULO_ALT', 'DATA_CALCULO_ALT'],
             'Medicaogra': ['MEDICAOGRA', 'MEDICAO_GRA', 'DATA_MEDICAO_GRA'],
@@ -151,7 +168,7 @@ with aba1:
             txt_buffer = io.StringIO()
             df_txt.to_csv(txt_buffer, sep=' ', index=False, header=False)
             
-            # Geração do Excel com as 7 abas multi-datas
+            # Geração do Excel com as 8 abas multi-datas
             excel_buffer_multisheet = criar_excel_multidatas(df)
             
             st.subheader("Downloads dos Arquivos Gerados (Etapa 1)")
@@ -166,7 +183,7 @@ with aba1:
                 )
             with col_d2:
                 st.download_button(
-                    label="Baixar Planilha com 7 Abas de Dados Organizados (.xlsx)",
+                    label="Baixar Planilha com 8 Abas de Dados Organizados (.xlsx)",
                     data=excel_buffer_multisheet,
                     file_name="00_IBGE_Estacoes_Tratadas_Organizadas.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -263,7 +280,7 @@ with aba2:
             else:
                 df_completo['REGIAO_OFICIAL'] = 'Outras Regiões'
                 
-            st.subheader("Relatórios Regionais Gerados (Cada um contendo as 7 abas de datas)")
+            st.subheader("Relatórios Regionais Gerados (Cada um contendo as 8 abas de datas)")
             
             # Relatório Geral
             b_geral_multisheet = criar_excel_multidatas(df_completo)
