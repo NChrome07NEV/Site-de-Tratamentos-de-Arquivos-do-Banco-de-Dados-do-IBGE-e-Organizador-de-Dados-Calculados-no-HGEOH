@@ -8,14 +8,14 @@ from openpyxl.styles import Font, Alignment
 #openpyxl para a organização e formatação dos arquivos gerados nas duas etapas do programa.
 
 # Configuração da página Streamlit
-st.set_page_config(page_title="Processador de Dados IBGE", layout="wide")
+st.set_page_config(page_title="Organizador e Formator de Arquivos Brutos das Estações Gravimétricas Gerados no Site do Banco de Dados do IBGE ", layout="wide")
 
 # ==========================================
 # CONTROLE DE ACESSO POR SENHA
 # ==========================================
-st.title("Acesso Restrito - Organizador de Dados das Estações Gravimétricas do Banco de Dados do IBGE (RJ)")
+st.title("Acesso Restrito - Organizador e Formatador de Arquivos Brutos das Estações Gravimétricas Gerados no Site do Banco de Dados do IBGE (RJ)")
 
-SENHA_DO_PROJETO = "SIRAB_HGEO2026"
+SENHA_DO_PROJETO = "314159SIRAB_HGEO2026981"
 
 senha_digitada = st.text_input(
     "Digite a senha de acesso para liberar a ferramenta:", type="password"
