@@ -13,7 +13,7 @@ st.set_page_config(
 # ==========================================
 # CONTROLE DE ACESSO / SEGURANÇA
 # ==========================================
-st.title("Acesso Restrito - Processador e Organizador de Dados Gravimétricos do IBGE (RJ)")
+st.title("Acesso Restrito - Organizador de Dados das Estações Gravimétricas do Banco de Dados do IBGE (RJ)")
 
 SENHA_DO_PROJETO = "SIRAB_HGEO2026"
 
@@ -33,8 +33,8 @@ st.success("Acesso autorizado com sucesso! Seja bem-vindo ao sistema.")
 # ESTRUTURA DO APLICATIVO EM 2 ETAPAS (ABAS)
 # ==========================================
 aba1, aba2 = st.tabs([
-    "📍 Etapa 1: Formatação de Coordenadas & Gerar TXT para o hgeoHNOR2020",
-    "📊 Etapa 2: Cruzamento pós-hgeoHNOR2020 & Relatórios Regionais (9 Arquivos)"
+    "Etapa 1: Formatação de Coordenadas e Gerar TXT para o hgeoHNOR2020",
+    "Etapa 2: Cruzamento pós-hgeoHNOR2020 e Relatórios Regionais (9 Arquivos)"
 ])
 
 # Função auxiliar para formatar coordenadas
