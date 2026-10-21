@@ -33,7 +33,7 @@ st.markdown("""
 # ==========================================
 # CONTROLE DE ACESSO POR SENHA
 # ==========================================
-st.title("Acesso Restrito - Organizador e Formatador de Arquivos Brutos das Estações Gravimétricas Gerados no Site do Banco de Dados do IBGE (RJ)")
+st.title("Acesso Restrito - Organizador e Formatador de Arquivos Brutos das Estações Gravimétricas Geradas no Site do Banco de Dados do IBGE (RJ)")
 
 SENHA_DO_PROJETO = "314159SIRAB_HGEO2026981"
 
