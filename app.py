@@ -3,6 +3,8 @@ import re
 import pandas as pd
 import streamlit as st
 #Segundo Teste
+#Realizando o experimento total, agora aqui está a tentativa de juntar os dois fluxos de trabalhos em um único programa com o intuito de gerar um site e facilitar
+#o trabalho do projeto e talvez outros possíveis usos desse programa.
 
 # Configuração da página do aplicativo
 st.set_page_config(
