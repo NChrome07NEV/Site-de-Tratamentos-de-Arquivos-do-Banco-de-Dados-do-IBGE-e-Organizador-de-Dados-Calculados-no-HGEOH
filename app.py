@@ -3,7 +3,7 @@ import pandas as pd
 import io
 import openpyxl
 from openpyxl.styles import Font, Alignment
-#Décimo Primeiro Teste: após algumas edições, adições e correções do programa, a ideia permanece a mesma de gerar os arquivos gerados para uma melhor organização dos dados
+#Décimo Segundo Teste: após algumas edições, adições e correções do programa, a ideia permanece a mesma de gerar os arquivos gerados para uma melhor organização dos dados
 #gerados pelo banco de dados do IBGE e pelo arquivo gerado na conversão de altitudes hgeohnor2020. Dessa vez foi necessário fazer o import de mais uma biblioteca
 #openpyxl para a organização e formatação dos arquivos gerados nas duas etapas do programa e alinhamento / centralização dos aspectos visuais do site. Além disso, 
 #agora o programa vai reorganizar novamente os arquivos por data, porém para cada tipo de medicao presente dos arquivos. Antes era gerado apenas o tipo de 
@@ -14,6 +14,7 @@ from openpyxl.styles import Font, Alignment
 #o problema de duplicidade nas colunas da segunda etapa.
 #Agora foi implementado mais algumas interações visuais de carregamento / upload dos arquivos e corrigido alguns erros de posicionamento das colunas gerados pelos arquivos
 #da segunda etapa novamente.
+#Novamente, corrigido mais alguns problemas de otimização ao prosseguir da etapa 1 para a etapa 2 e removido o problema de duplicidade das opções na etapa 2.
 
 # Configuração da página Streamlit
 st.set_page_config(page_title="Organizador e Formatador de Arquivos Brutos das Estações Gravimétricas do Rio de Janeiro - BD - IBGE", layout="wide")
@@ -203,7 +204,6 @@ with aba2:
                 
                 df_excel = pd.read_excel(file_excel_ref, sheet_name=0)
                 
-                # Identifica dinamicamente a coluna de ID no arquivo do HGEOHNOR (ex: id_ponto, estacao, etc.)
                 col_id_ibge_candidates = [c for c in df_ibge.columns if 'id' in c.lower() or 'ponto' in c.lower() or 'estacao' in c.lower()]
                 col_id_ibge = col_id_ibge_candidates[0] if col_id_ibge_candidates else df_ibge.columns[0]
                 
@@ -212,7 +212,6 @@ with aba2:
                 df_ibge[col_id_ibge] = df_ibge[col_id_ibge].astype(str).str.strip()
                 df_excel[col_id_excel] = df_excel[col_id_excel].astype(str).str.strip()
                 
-                # Evita duplicar colunas idênticas na mesclagem
                 if col_id_excel in df_ibge.columns and col_id_excel != col_id_ibge:
                     df_ibge = df_ibge.drop(columns=[col_id_excel])
                     
@@ -288,8 +287,7 @@ with aba2:
             )
             
             if tipo_relatorio == "Gerar relatório geral":
-                with st.spinner("Gerando arquivo Excel Geral (8 abas com formatação)..."):
-                    b_geral_multisheet = criar_excel_multidatas(df_completo)
+                b_geral_multisheet = criar_excel_multidatas(df_completo)
                 st.download_button(
                     label=f"Baixar 01_Relatorio_Geral_Estado_Rio_Multidatas.xlsx ({len(df_completo)} estações)",
                     data=b_geral_multisheet,
@@ -309,31 +307,30 @@ with aba2:
                     'Região Centro-Sul Fluminense': '09_Regiao_Centro_Sul_Fluminense.xlsx'
                 }
                 
-                with st.spinner("Gerando relatórios de todas as regiões..."):
-                    for regiao_nome, nome_arquivo in regioes_nomes.items():
-                        df_regiao = df_completo[df_completo['REGIAO_OFICIAL'] == regiao_nome]
-                        if len(df_regiao) > 0:
-                            b_reg_multisheet = criar_excel_multidatas(df_regiao)
-                            st.download_button(
-                                label=f"Baixar {nome_arquivo} ({regiao_nome} - {len(df_regiao)} estações)",
-                                data=b_reg_multisheet,
-                                file_name=nome_arquivo,
-                                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                                key=f"dl_{regiao_nome}"
-                            )
-                        else:
-                            st.info(f"Nenhuma estação encontrada para a {regiao_nome}.")
+                for regiao_nome, nome_arquivo in regioes_nomes.items():
+                    df_regiao = df_completo[df_completo['REGIAO_OFICIAL'] == regiao_nome]
+                    if len(df_regiao) > 0:
+                        b_reg_multisheet = criar_excel_multidatas(df_regiao)
+                        st.download_button(
+                            label=f"Baixar {nome_arquivo} ({regiao_nome} - {len(df_regiao)} estações)",
+                            data=b_reg_multisheet,
+                            file_name=nome_arquivo,
+                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            key=f"dl_{regiao_nome}"
+                        )
+                    else:
+                        st.info(f"Nenhuma estação encontrada para a {regiao_nome}.")
                         
             elif tipo_relatorio == "Gerar relatório de uma região específica":
-                lista_regioes_unicas = sorted(list(mapa_regioes.values())) + ['Outras Regiões']
+                # Utiliza set() para garantir valores únicos e evitar repetições no selectbox
+                lista_regioes_unicas = sorted(list(set(mapa_regioes.values()))) + ['Outras Regiões']
                 regiao_escolhida = st.selectbox("Escolha a região específica:", lista_regioes_unicas)
                 
                 df_regiao_esp = df_completo[df_completo['REGIAO_OFICIAL'] == regiao_escolhida]
                 
                 if len(df_regiao_esp) > 0:
-                    with st.spinner(f"Preparando relatório para a {regiao_escolhida}..."):
-                        b_esp_multisheet = criar_excel_multidatas(df_regiao_esp)
-                        nome_arq_esp = f"Relatorio_{regiao_escolhida.replace(' ', '_')}.xlsx"
+                    b_esp_multisheet = criar_excel_multidatas(df_regiao_esp)
+                    nome_arq_esp = f"Relatorio_{regiao_escolhida.replace(' ', '_')}.xlsx"
                     st.download_button(
                         label=f"Baixar {nome_arq_esp} ({len(df_regiao_esp)} estações)",
                         data=b_esp_multisheet,
