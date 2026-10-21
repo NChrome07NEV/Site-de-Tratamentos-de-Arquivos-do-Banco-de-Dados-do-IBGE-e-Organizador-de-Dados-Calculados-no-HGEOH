@@ -3,30 +3,24 @@ import pandas as pd
 import io
 import openpyxl
 from openpyxl.styles import Font, Alignment
-#Oitavo teste:
-##Realizando o experimento total, agora aqui está a tentativa de juntar os dois fluxos de trabalhos em um único programa com o intuito de gerar um site e facilitar
-#o trabalho do projeto e talvez outros possíveis usos desse programa.
-#Dessa vez, foi implementado uma nova biblioteca 'openpyxl' para formatar o texto e estrutura das células no arquivo excel da primeira etapa.
 
 # Configuração da página sem emojis
 st.set_page_config(
-    page_title="Processador de Estações Geodésicas - IBGE",
+    page_title="Organizador e Formator de Arquivos Brutos das Estações Gravimétricas Gerados no Site do Banco de Dados do IBGE ",
     layout="wide"
 )
 
-st.title("Processador de Estações Geodésicas - IBGE")
+st.title("Acesso Restrito - Organizador e Formatador de Arquivos Brutos das Estações Gravimétricas Gerados do Banco de Dados do IBGE (RJ)")
 
-# ... (Seu fluxo de upload/busca dos dados mantido) ...
-
-def formatar_excel(df):
+# Função genérica para estilizar qualquer arquivo Excel com OpenPyXL
+def aplicar_estilo_excel(df, nome_aba='Sheet1'):
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        # Nome correto da aba: Sheet1
-        df.to_excel(writer, sheet_name='Sheet1', index=False)
+        df.to_excel(writer, sheet_name=nome_aba, index=False)
         workbook = writer.book
-        worksheet = writer.sheets['Sheet1']
+        worksheet = writer.sheets[nome_aba]
         
-        # Estilo solicitado: Times New Roman, Tamanho 12, Centralizado
+        # Configuração de estilo: Times New Roman, Tamanho 12, Centralizado
         fonte_customizada = Font(name='Times New Roman', size=12)
         alinhamento_central = Alignment(horizontal='center', vertical='center')
         
@@ -35,7 +29,7 @@ def formatar_excel(df):
                 cell.font = fonte_customizada
                 cell.alignment = alinhamento_central
                 
-        # Auto-ajuste de largura das colunas
+        # Auto-ajuste de largura das colunas (equivalente ao duplo clique entre colunas)
         for col in worksheet.columns:
             max_len = max(len(str(cell.value or '')) for cell in col)
             col_letter = openpyxl.utils.get_column_letter(col[0].column)
@@ -43,32 +37,37 @@ def formatar_excel(df):
             
     return output.getvalue()
 
+# Função para ordenar dataframe por data
+def ordenar_por_data(df):
+    # Procura colunas de data disponíveis (ex: VISITA, MEDICAOPLAN, etc.)
+    colunas_data = [col for col in ['VISITA', 'MEDICAOPLAN', 'CALCULOGRA', 'MEDICAOALT'] if col in df.columns]
+    
+    if colunas_data:
+        col_ref = colunas_data[0]
+        # Converte temporariamente para datetime para ordenar corretamente
+        df_temp = df.copy()
+        df_temp['_data_sort'] = pd.to_datetime(df_temp[col_ref], format='%d/%m/%Y', errors='coerce')
+        df_sorted = df_temp.sort_values(by='_data_sort').drop(columns=['_data_sort'])
+        return df_sorted
+    return df
+
+# Função para gerar o arquivo TXT estrito com 3 colunas (ESTACAO, LATITUDE, LONGITUDE)
 def gerar_txt_estacoes(df):
-    # Garante a seleção estrita das 3 colunas: ESTACAO, LATITUDE, LONGITUDE
     df_txt = df[['ESTACAO', 'LATITUDE', 'LONGITUDE']].copy()
-    
-    # Remove linhas onde alguma das coordenadas ou estação seja nula
     df_txt = df_txt.dropna(subset=['ESTACAO', 'LATITUDE', 'LONGITUDE'])
-    
-    # Formatação limpa separada por espaço
-    txt_content = df_txt.to_csv(index=False, header=False, sep=' ')
-    return txt_content
+    return df_txt.to_csv(index=False, header=False, sep=' ')
 
-# Exemplo de geração dos botões de download:
-# 1. Download do Excel
-# excel_data = formatar_excel(df_processado)
-# st.download_button(
-#     label="Baixar Dados Organizados (.xlsx)",
-#     data=excel_data,
-#     file_name="Dados Organizados - EG.xlsx",
-#     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-# )
+# --- ETAPA 1: Processamento Inicial ---
+st.header("Etapa 1: Organização dos Dados do IBGE")
+# Exemplo de fluxo para a Etapa 1:
+# df_etapa1 = processar_dados_ibge(...)
+# df_etapa1_ordenado = ordenar_por_data(df_etapa1)
+# excel_etapa1 = aplicar_estilo_excel(df_etapa1_ordenado, nome_aba='Sheet1')
+# txt_etapa1 = gerar_txt_estacoes(df_etapa1_ordenado)
 
-# 2. Download do TXT Entrada HGEOHNOR2020
-# txt_data = gerar_txt_estacoes(df_processado)
-# st.download_button(
-#     label="Baixar Estações - LAT - LON (.txt)",
-#     data=txt_data,
-#     file_name="Estacoes_Entrada_HGEOHNOR2020.txt",
-#     mime="text/plain"
-# )
+# --- ETAPA 2: Processamento dos Dados do HGEOH ---
+st.header("Etapa 2: Organização dos Dados do HGEOH")
+# Exemplo de fluxo para a Etapa 2:
+# df_etapa2 = processar_dados_hgeoh(...)
+# df_etapa2_ordenado = ordenar_por_data(df_etapa2)
+# excel_etapa2 = aplicar_estilo_excel(df_etapa2_ordenado, nome_aba='Sheet1')
