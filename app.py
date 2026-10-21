@@ -3,19 +3,21 @@ import pandas as pd
 import io
 import openpyxl
 from openpyxl.styles import Font, Alignment
-#Sexto Teste: após algumas edições, adições e correções do programa, a ideia permanece a mesma de gerar os arquivos gerados para uma melhor organização dos dados
+#Sétimo Teste: após algumas edições, adições e correções do programa, a ideia permanece a mesma de gerar os arquivos gerados para uma melhor organização dos dados
 #gerados pelo banco de dados do IBGE e pelo arquivo gerado na conversão de altitudes hgeohnor2020. Dessa vez foi necessário fazer o import de mais uma biblioteca
-#openpyxl para a organização e formatação dos arquivos gerados nas duas etapas do programa.
+#openpyxl para a organização e formatação dos arquivos gerados nas duas etapas do programa. Além disso, agora o programa vai reorganizar novamente os arquivos por data,
+#porém para cada tipo de medicao presente dos arquivos. Antes era gerado apenas o tipo de medicaoplan para cada arquivo, mas talvez seja interessante olhar para cada
+#dado de forma individual para outros processos futuros para os outros cálculos por PVC ou definição do numero geopotencial.
 
 # Configuração da página Streamlit
-st.set_page_config(page_title="Organizador e Formator de Arquivos Brutos das Estações Gravimétricas Gerados no Site do Banco de Dados do IBGE ", layout="wide")
+st.set_page_config(page_title="Processador de Dados IBGE", layout="wide")
 
 # ==========================================
 # CONTROLE DE ACESSO POR SENHA
 # ==========================================
-st.title("Acesso Restrito - Organizador e Formatador de Arquivos Brutos das Estações Gravimétricas Gerados no Site do Banco de Dados do IBGE (RJ)")
+st.title("Acesso Restrito - Organizador de Dados das Estações Gravimétricas do Banco de Dados do IBGE (RJ)")
 
-SENHA_DO_PROJETO = "314159SIRAB_HGEO2026981"
+SENHA_DO_PROJETO = "SIRAB_HGEO2026"
 
 senha_digitada = st.text_input(
     "Digite a senha de acesso para liberar a ferramenta:", type="password"
@@ -32,21 +34,51 @@ st.success("Acesso autorizado com sucesso! Seja bem-vindo ao sistema.")
 # ==========================================
 # FUNÇÕES AUXILIARES
 # ==========================================
-def aplicar_formatacao_excel(buffer_excel):
+def criar_excel_multidatas(df_base):
     """
-    Aplica formatação Times New Roman, tamanho 12, centralização de texto
-    e autofit de largura de colunas em uma planilha Excel contida em buffer.
+    Cria um buffer Excel contendo 7 abas:
+    1. Geral (sem ordenação)
+    2. Medicaoplan (ordenado pela data mais recente)
+    3. Medicaoalt (ordenado pela data mais recente)
+    4. Calculoalt (ordenado pela data mais recente)
+    5. Medicaogra (ordenado pela data mais recente)
+    6. Calculogra (ordenado pela data mais recente)
+    7. Visita (ordenado pela data mais recente)
+    Aplicando a formatação openpyxl em todas as abas.
     """
-    buffer_excel.seek(0)
-    wb = openpyxl.load_workbook(buffer_excel)
-    
+    buffer_out = io.BytesIO()
+    with pd.ExcelWriter(buffer_out, engine='openpyxl') as writer:
+        # 1. Aba Geral
+        df_base.to_excel(writer, sheet_name='Geral', index=False)
+        
+        # Mapeamento de tópicos e colunas candidatas correspondentes
+        topicos = {
+            'Medicaoplan': ['MEDICAOPLAN', 'MEDICAO_PLAN', 'DATA_MEDICAO_PLAN'],
+            'Medicaoalt': ['MEDICAOALT', 'MEDICAO_ALT', 'DATA_MEDICAO_ALT'],
+            'Calculoalt': ['CALCULOALT', 'CALCULO_ALT', 'DATA_CALCULO_ALT'],
+            'Medicaogra': ['MEDICAOGRA', 'MEDICAO_GRA', 'DATA_MEDICAO_GRA'],
+            'Calculogra': ['CALCULOGRA', 'CALCULO_GRA', 'DATA_CALCULO_GRA'],
+            'Visita': ['VISITA', 'DATA_VISITA', 'ULTIMA_VISITA']
+        }
+        
+        for nome_aba, col_candidates in topicos.items():
+            col_encontrada = next((c for c in col_candidates if c in df_base.columns), None)
+            df_copia = df_base.copy()
+            if col_encontrada:
+                df_copia['temp_dt'] = pd.to_datetime(df_copia[col_encontrada], dayfirst=True, errors='coerce')
+                df_copia = df_copia.sort_values(by='temp_dt', ascending=False).drop(columns=['temp_dt'])
+            
+            df_copia.to_excel(writer, sheet_name=nome_aba, index=False)
+            
+    # Aplicar formatação visual em todas as planilhas do arquivo gerado
+    buffer_out.seek(0)
+    wb = openpyxl.load_workbook(buffer_out)
     for ws in wb.worksheets:
         for row in ws.iter_rows():
             for cell in row:
                 cell.font = Font(name='Times New Roman', size=12)
                 cell.alignment = Alignment(horizontal='center', vertical='center')
         
-        # Ajuste automático de largura de colunas
         for col in ws.columns:
             max_len = 0
             col_letter = col[0].column_letter
@@ -56,10 +88,10 @@ def aplicar_formatacao_excel(buffer_excel):
                     max_len = len(val_str)
             ws.column_dimensions[col_letter].width = max(max_len + 4, 12)
             
-    out_buffer = io.BytesIO()
-    wb.save(out_buffer)
-    out_buffer.seek(0)
-    return out_buffer
+    final_buffer = io.BytesIO()
+    wb.save(final_buffer)
+    final_buffer.seek(0)
+    return final_buffer
 
 def formatar_coordenada(valor):
     s = str(valor).strip().replace(',', '.')
@@ -110,12 +142,6 @@ with aba1:
                 df[col_lat] = df[col_lat].apply(formatar_coordenada)
                 df[col_lon] = df[col_lon].apply(formatar_coordenada)
             
-            # Ordenação por data se a coluna MEDICAOPLAN existir
-            col_data = 'MEDICAOPLAN' if 'MEDICAOPLAN' in df.columns else None
-            if col_data:
-                df['data_temp'] = pd.to_datetime(df[col_data], dayfirst=True, errors='coerce')
-                df = df.sort_values(by='data_temp', ascending=False).drop(columns=['data_temp'])
-            
             # Geração do TXT contendo unicamente ESTACAO, LATITUDE e LONGITUDE
             if col_id in df.columns and col_lat in df.columns and col_lon in df.columns:
                 df_txt = df[[col_id, col_lat, col_lon]]
@@ -125,12 +151,8 @@ with aba1:
             txt_buffer = io.StringIO()
             df_txt.to_csv(txt_buffer, sep=' ', index=False, header=False)
             
-            # Geração da planilha Excel formatada
-            excel_buffer_raw = io.BytesIO()
-            with pd.ExcelWriter(excel_buffer_raw, engine='openpyxl') as writer:
-                df.to_excel(writer, index=False)
-            
-            excel_buffer_formatted = aplicar_formatacao_excel(excel_buffer_raw)
+            # Geração do Excel com as 7 abas multi-datas
+            excel_buffer_multisheet = criar_excel_multidatas(df)
             
             st.subheader("Downloads dos Arquivos Gerados (Etapa 1)")
             col_d1, col_d2 = st.columns(2)
@@ -144,8 +166,8 @@ with aba1:
                 )
             with col_d2:
                 st.download_button(
-                    label="Baixar Planilha de Dados Organizados (.xlsx)",
-                    data=excel_buffer_formatted,
+                    label="Baixar Planilha com 7 Abas de Dados Organizados (.xlsx)",
+                    data=excel_buffer_multisheet,
                     file_name="00_IBGE_Estacoes_Tratadas_Organizadas.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
@@ -169,7 +191,7 @@ with aba2:
                 file_ibge_csv.seek(0)
                 df_ibge = pd.read_csv(file_ibge_csv, sep=None, engine='python', encoding='latin1')
                 
-            df_excel = pd.read_excel(file_excel_ref)
+            df_excel = pd.read_excel(file_excel_ref, sheet_name=0) # Lê a primeira aba (Geral) como referência
             
             col_id_ibge_candidates = [c for c in df_ibge.columns if 'id' in c.lower() or 'ponto' in c.lower() or 'estacao' in c.lower()]
             col_id_ibge = col_id_ibge_candidates[0] if col_id_ibge_candidates else df_ibge.columns[0]
@@ -184,11 +206,6 @@ with aba2:
             outras_colunas = [c for c in df_completo.columns if c != col_id_ibge and c not in colunas_para_frente]
             ordem_final = [col_id_ibge] + colunas_para_frente + outras_colunas
             df_completo = df_completo[ordem_final]
-            
-            col_data = 'MEDICAOPLAN' if 'MEDICAOPLAN' in df_completo.columns else None
-            if col_data:
-                df_completo['data_temp'] = pd.to_datetime(df_completo[col_data], dayfirst=True, errors='coerce')
-                df_completo = df_completo.sort_values(by='data_temp', ascending=False).drop(columns=['data_temp'])
                 
             mapa_regioes = {
                 'Rio de Janeiro': 'Região Metropolitana', 'Niterói': 'Região Metropolitana',
@@ -246,18 +263,14 @@ with aba2:
             else:
                 df_completo['REGIAO_OFICIAL'] = 'Outras Regiões'
                 
-            st.subheader("Relatórios Regionais Gerados")
+            st.subheader("Relatórios Regionais Gerados (Cada um contendo as 7 abas de datas)")
             
             # Relatório Geral
-            b_geral = io.BytesIO()
-            with pd.ExcelWriter(b_geral, engine='openpyxl') as writer:
-                df_completo.to_excel(writer, index=False)
-            b_geral_fmt = aplicar_formatacao_excel(b_geral)
-            
+            b_geral_multisheet = criar_excel_multidatas(df_completo)
             st.download_button(
-                label=f"Baixar 01_Relatorio_Geral_Estado_Rio_Ordenado.xlsx ({len(df_completo)} estações)",
-                data=b_geral_fmt,
-                file_name="01_Relatorio_Geral_Estado_Rio_Ordenado.xlsx",
+                label=f"Baixar 01_Relatorio_Geral_Estado_Rio_Multidatas.xlsx ({len(df_completo)} estações)",
+                data=b_geral_multisheet,
+                file_name="01_Relatorio_Geral_Estado_Rio_Multidatas.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
             
@@ -274,14 +287,11 @@ with aba2:
             
             for regiao_nome, nome_arquivo in regioes_nomes.items():
                 df_regiao = df_completo[df_completo['REGIAO_OFICIAL'] == regiao_nome]
-                b_reg = io.BytesIO()
-                with pd.ExcelWriter(b_reg, engine='openpyxl') as writer:
-                    df_regiao.to_excel(writer, index=False)
-                b_reg_fmt = aplicar_formatacao_excel(b_reg)
+                b_reg_multisheet = criar_excel_multidatas(df_regiao)
                 
                 st.download_button(
                     label=f"Baixar {nome_arquivo} ({len(df_regiao)} estações)",
-                    data=b_reg_fmt,
+                    data=b_reg_multisheet,
                     file_name=nome_arquivo,
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
