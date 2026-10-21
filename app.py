@@ -3,15 +3,18 @@ import pandas as pd
 import io
 import openpyxl
 from openpyxl.styles import Font, Alignment
-#Oitavo Teste: após algumas edições, adições e correções do programa, a ideia permanece a mesma de gerar os arquivos gerados para uma melhor organização dos dados
+#Nono Teste: após algumas edições, adições e correções do programa, a ideia permanece a mesma de gerar os arquivos gerados para uma melhor organização dos dados
 #gerados pelo banco de dados do IBGE e pelo arquivo gerado na conversão de altitudes hgeohnor2020. Dessa vez foi necessário fazer o import de mais uma biblioteca
 #openpyxl para a organização e formatação dos arquivos gerados nas duas etapas do programa e alinhamento / centralização dos aspectos visuais do site. Além disso, 
 #agora o programa vai reorganizar novamente os arquivos por data, porém para cada tipo de medicao presente dos arquivos. Antes era gerado apenas o tipo de 
 #medicaoplan para cada arquivo, mas talvez seja interessante olhar para cada dado de forma individual para outros processos futuros para os outros cálculos por PVC
 #ou definição do numero geopotencial.
+#Problema gerado anteriormente: alto processamento do CPU/RAM e fazendo com que o site crashe. Para resolver, foi adicionado uma aba que o usuário possa selecionar
+#o que quiser gerar e reorganizado algumas linhas de código para que o programe baixe um por vez ao invés de gerar todos de uma vez só. Além disso, também foi corrigido
+#o problema de duplicidade nas colunas da segunda etapa.
 
 # Configuração da página Streamlit
-st.set_page_config(page_title="Organizador e Formator de Arquivos Brutos das Estações Gravimétricas Gerados no Site do Banco de Dados do IBGE ", layout="wide")
+st.set_page_config(page_title="Organizador e Formatador de Arquivos Brutos das Estações Gravimétricas do Rio de Janeiro - BD - IBGE", layout="wide")
 
 # ==========================================
 # ESTILO CSS PARA CENTRALIZAR TÍTULOS E TEXTOS
@@ -21,7 +24,7 @@ st.markdown("""
     h1, h2, h3, p, .stMarkdown {
         text-align: center;
     }
-    .stTextInput, .stFileUploader, .stTabs, .stButton {
+    .stTextInput, .stFileUploader, .stTabs, .stButton, .stSelectbox, .stRadio {
         text-align: left;
     }
     </style>
@@ -51,23 +54,12 @@ st.success("Acesso autorizado com sucesso! Seja bem-vindo ao sistema.")
 # ==========================================
 def criar_excel_multidatas(df_base):
     """
-    Cria um buffer Excel contendo 8 abas:
-    1. Geral (sem ordenação)
-    2. Medicaoplan (ordenado pela data mais recente)
-    3. Datcalcplan (ordenado pela data mais recente)
-    4. Medicaoalt (ordenado pela data mais recente)
-    5. Calculoalt (ordenado pela data mais recente)
-    6. Medicaogra (ordenado pela data mais recente)
-    7. Calculogra (ordenado pela data mais recente)
-    8. Visita (ordenado pela data mais recente)
-    Aplicando a formatação openpyxl em todas as abas.
+    Cria um buffer Excel contendo 8 abas com ordenações específicas e formatação visual.
     """
     buffer_out = io.BytesIO()
     with pd.ExcelWriter(buffer_out, engine='openpyxl') as writer:
-        # 1. Aba Geral
         df_base.to_excel(writer, sheet_name='Geral', index=False)
         
-        # Mapeamento de tópicos e colunas candidatas correspondentes (8 planilhas no total)
         topicos = {
             'Medicaoplan': ['MEDICAOPLAN', 'MEDICAO_PLAN', 'DATA_MEDICAO_PLAN'],
             'Datcalcplan': ['DATCALCPLAN', 'DAT_CALC_PLAN', 'DATA_CALC_PLAN'],
@@ -87,7 +79,6 @@ def criar_excel_multidatas(df_base):
             
             df_copia.to_excel(writer, sheet_name=nome_aba, index=False)
             
-    # Aplicar formatação visual em todas as planilhas do arquivo gerado
     buffer_out.seek(0)
     wb = openpyxl.load_workbook(buffer_out)
     for ws in wb.worksheets:
@@ -129,7 +120,7 @@ def formatar_coordenada(valor):
 # ==========================================
 # INTERFACE PRINCIPAL
 # ==========================================
-st.title("Processador e Organizador dos Arquivos Brutos Gerados no Site do Banco de Dados - IBGE")
+st.title("Processador e Organizador de Dados dos Arquivos Gerados pelo Site do IBGE - Banco de Dados")
 
 aba1, aba2 = st.tabs(["Etapa 1: Formatação do CSV IBGE", "Etapa 2: Cruzamento e Agrupamento Regional"])
 
@@ -159,7 +150,6 @@ with aba1:
                 df[col_lat] = df[col_lat].apply(formatar_coordenada)
                 df[col_lon] = df[col_lon].apply(formatar_coordenada)
             
-            # Geração do TXT contendo unicamente ESTACAO, LATITUDE e LONGITUDE
             if col_id in df.columns and col_lat in df.columns and col_lon in df.columns:
                 df_txt = df[[col_id, col_lat, col_lon]]
             else:
@@ -168,7 +158,6 @@ with aba1:
             txt_buffer = io.StringIO()
             df_txt.to_csv(txt_buffer, sep=' ', index=False, header=False)
             
-            # Geração do Excel com as 8 abas multi-datas
             excel_buffer_multisheet = criar_excel_multidatas(df)
             
             st.subheader("Downloads dos Arquivos Gerados (Etapa 1)")
@@ -208,7 +197,7 @@ with aba2:
                 file_ibge_csv.seek(0)
                 df_ibge = pd.read_csv(file_ibge_csv, sep=None, engine='python', encoding='latin1')
                 
-            df_excel = pd.read_excel(file_excel_ref, sheet_name=0) # Lê a primeira aba (Geral) como referência
+            df_excel = pd.read_excel(file_excel_ref, sheet_name=0)
             
             col_id_ibge_candidates = [c for c in df_ibge.columns if 'id' in c.lower() or 'ponto' in c.lower() or 'estacao' in c.lower()]
             col_id_ibge = col_id_ibge_candidates[0] if col_id_ibge_candidates else df_ibge.columns[0]
@@ -217,12 +206,11 @@ with aba2:
             df_ibge[col_id_ibge] = df_ibge[col_id_ibge].astype(str).str.strip()
             df_excel[col_id_excel] = df_excel[col_id_excel].astype(str).str.strip()
             
+            # Evita duplicar colunas idênticas na mesclagem
+            if col_id_excel in df_ibge.columns and col_id_excel != col_id_ibge:
+                df_ibge = df_ibge.drop(columns=[col_id_excel])
+                
             df_completo = pd.merge(df_ibge, df_excel, left_on=col_id_ibge, right_on=col_id_excel, how='left')
-            
-            colunas_para_frente = [c for c in ['MUNICIPIO', 'MEDICAOPLAN', 'UF', 'TEMA'] if c in df_completo.columns]
-            outras_colunas = [c for c in df_completo.columns if c != col_id_ibge and c not in colunas_para_frente]
-            ordem_final = [col_id_ibge] + colunas_para_frente + outras_colunas
-            df_completo = df_completo[ordem_final]
                 
             mapa_regioes = {
                 'Rio de Janeiro': 'Região Metropolitana', 'Niterói': 'Região Metropolitana',
@@ -280,37 +268,69 @@ with aba2:
             else:
                 df_completo['REGIAO_OFICIAL'] = 'Outras Regiões'
                 
-            st.subheader("Relatórios Regionais Gerados (Cada um contendo as 8 abas de datas)")
+            st.markdown("---")
+            st.subheader("Opções de Geração de Relatórios da Etapa 2")
             
-            # Relatório Geral
-            b_geral_multisheet = criar_excel_multidatas(df_completo)
-            st.download_button(
-                label=f"Baixar 01_Relatorio_Geral_Estado_Rio_Multidatas.xlsx ({len(df_completo)} estações)",
-                data=b_geral_multisheet,
-                file_name="01_Relatorio_Geral_Estado_Rio_Multidatas.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            tipo_relatorio = st.radio(
+                "Selecione o tipo de relatório que deseja gerar e baixar:",
+                [
+                    "Gerar relatório geral",
+                    "Gerar relatório de todas as regiões do Rio de Janeiro",
+                    "Gerar relatório de uma região específica"
+                ]
             )
             
-            regioes_nomes = {
-                'Região Metropolitana': '02_Regiao_Metropolitana.xlsx',
-                'Região Médio Paraíba': '03_Regiao_Medio_Paraiba.xlsx',
-                'Região Costa Verde': '04_Regiao_Costa_Verde.xlsx',
-                'Região Serrana': '05_Regiao_Serrana.xlsx',
-                'Região Norte Fluminense': '06_Regiao_Norte_Fluminense.xlsx',
-                'Região Noroeste Fluminense': '07_Regiao_Noroeste_Fluminense.xlsx',
-                'Região Baixadas Litorâneas': '08_Regiao_Baixadas_Litoraneas.xlsx',
-                'Região Centro-Sul Fluminense': '09_Regiao_Centro_Sul_Fluminense.xlsx'
-            }
-            
-            for regiao_nome, nome_arquivo in regioes_nomes.items():
-                df_regiao = df_completo[df_completo['REGIAO_OFICIAL'] == regiao_nome]
-                b_reg_multisheet = criar_excel_multidatas(df_regiao)
-                
+            if tipo_relatorio == "Gerar relatório geral":
+                b_geral_multisheet = criar_excel_multidatas(df_completo)
                 st.download_button(
-                    label=f"Baixar {nome_arquivo} ({len(df_regiao)} estações)",
-                    data=b_reg_multisheet,
-                    file_name=nome_arquivo,
+                    label=f"Baixar 01_Relatorio_Geral_Estado_Rio_Multidatas.xlsx ({len(df_completo)} estações)",
+                    data=b_geral_multisheet,
+                    file_name="01_Relatorio_Geral_Estado_Rio_Multidatas.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
+                
+            elif tipo_relatorio == "Gerar relatório de todas as regiões do Rio de Janeiro":
+                regioes_nomes = {
+                    'Região Metropolitana': '02_Regiao_Metropolitana.xlsx',
+                    'Região Médio Paraíba': '03_Regiao_Medio_Paraiba.xlsx',
+                    'Região Costa Verde': '04_Regiao_Costa_Verde.xlsx',
+                    'Região Serrana': '05_Regiao_Serrana.xlsx',
+                    'Região Norte Fluminense': '06_Regiao_Norte_Fluminense.xlsx',
+                    'Região Noroeste Fluminense': '07_Regiao_Noroeste_Fluminense.xlsx',
+                    'Região Baixadas Litorâneas': '08_Regiao_Baixadas_Litoraneas.xlsx',
+                    'Região Centro-Sul Fluminense': '09_Regiao_Centro_Sul_Fluminense.xlsx'
+                }
+                
+                for regiao_nome, nome_arquivo in regioes_nomes.items():
+                    df_regiao = df_completo[df_completo['REGIAO_OFICIAL'] == regiao_nome]
+                    if len(df_regiao) > 0:
+                        b_reg_multisheet = criar_excel_multidatas(df_regiao)
+                        st.download_button(
+                            label=f"Baixar {nome_arquivo} ({regiao_nome} - {len(df_regiao)} estações)",
+                            data=b_reg_multisheet,
+                            file_name=nome_arquivo,
+                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                        )
+                    else:
+                        st.info(f"Nenhuma estação encontrada para a {regiao_nome}.")
+                        
+            elif tipo_relatorio == "Gerar relatório de uma região específica":
+                lista_regioes_unicas = sorted(list(mapa_regioes.values())) + ['Outras Regiões']
+                regiao_escolhida = st.selectbox("Escolha a região específica:", lista_regioes_unicas)
+                
+                df_regiao_esp = df_completo[df_completo['REGIAO_OFICIAL'] == regiao_escolhida]
+                
+                if len(df_regiao_esp) > 0:
+                    b_esp_multisheet = criar_excel_multidatas(df_regiao_esp)
+                    nome_arq_esp = f"Relatorio_{regiao_escolhida.replace(' ', '_')}.xlsx"
+                    st.download_button(
+                        label=f"Baixar {nome_arq_esp} ({len(df_regiao_esp)} estações)",
+                        data=b_esp_multisheet,
+                        file_name=nome_arq_esp,
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    )
+                else:
+                    st.warning(f"Não há estações cadastradas para a região selecionada ({regiao_escolhida}).")
+                    
         except Exception as e:
             st.error(f"Erro no processamento da Etapa 2: {str(e)}")
